@@ -9,7 +9,6 @@
 - Express.js
 ### Database:
 - MongoDB
-- 
 ## Features & Functional Requirements
 ### Frontend
 #### Pages:
