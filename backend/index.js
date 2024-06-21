@@ -1,106 +1,111 @@
-const express = require('express')
+const express = require('express');
 const { DBConnection } = require('./database/db');
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 const User = require('./models/Users');
-
-//creating express app
+const cors = require('cors')
+// creating express app
 const app = express();
 
-//middlewares
+// middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
+app.use(cors());
 
 DBConnection();
 
-//routes
+// routes
 app.get('/', (req, res) => {
-    res.send('Hello World')
-})
-app.post("/register", async (req, res) => {
+    res.send('Hello World');
+});
+
+app.post('/register', async (req, res) => {
     try {
-        //get data from rreques body
-        //destructuring
-        const { firstName, lastName, email, password } = req.body;
-        //check all data recieved
-        if (!(firstName && lastName && email && password)) {
-            return res.status(400).send("Please enter all the required feilds");
+        // get data from request body
+        const { username, email, password, adminRole } = req.body;
+
+        // check all data received
+        if (!(username && email && password)) {
+            return res.status(400).send("Please enter all the required fields");
         }
-        //check user exits
+
+        // check if user exists
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             console.log(email);
-            return res.status(400).send("User alrady exists. Enter new email.");
+            return res.status(400).send("User already exists. Enter a new email.");
         }
-        // encrypt
+
+        // encrypt password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        //save
+        // save user
         const user = await User.create({
-            firstName,
-            lastName,
+            username,
             email,
-            password: hashedPassword
-        })
+            password: hashedPassword,
+            adminRole: adminRole || false
+        });
 
-        //generate token for user
+        // generate token for user
         const token = jwt.sign({ id: user._id, email }, process.env.SECRET_KEY, {
             expiresIn: '1h'
-        })
+        });
 
-        //append this token to user
-        user.token = token;
-
-        //send the response and object
+        // send the response and object
         user.password = undefined;
-        res.status(201).json({ message: "New user successfully created", user })
-
+        res.status(201).json({ message: "New user successfully created", user, token });
 
     } catch (err) {
         console.log("Error while registering", err);
+        res.status(500).send("Internal Server Error");
     }
-})
+});
 
-app.post("/login", async (req, res) => {
+app.post('/login', async (req, res) => {
     try {
-        //get details
+        // get details
         const { email, password } = req.body;
+
+        // find user
         const existingUser = await User.findOne({ email });
         if (!existingUser) {
-            res.status(400).send("You are not registered. Please register to gain access")
+            return res.status(400).send("You are not registered. Please register to gain access.");
         }
-        // Compare passwords
+
+        // compare passwords
         const isMatch = await bcrypt.compare(password, existingUser.password);
         if (!isMatch) {
             return res.status(400).send("Wrong password");
         }
 
-        // Generate token for user
+        // generate token for user
         const token = jwt.sign({ id: existingUser._id, email }, process.env.SECRET_KEY, {
             expiresIn: '1h'
         });
 
-        //store cookies
+        // store cookies
         const options = {
             expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-            httpOnly: true, //only manipulate by server not by client/user
+            httpOnly: true,
         };
 
-        //send the token
+        // send the token
         res.status(200).cookie("token", token, options).json({
             message: "You have successfully logged in!",
             success: true,
             token,
         });
 
-
     } catch (err) {
-        console.log("Error while logging", err);
+        console.log("Error while logging in", err);
+        res.status(500).send("Internal Server Error");
     }
 });
 
-app.listen(3000, () => { console.log("server is listening on port 3000"); })
+app.listen(3000, () => {
+    console.log("Server is listening on port 3000");
+});
