@@ -1,15 +1,11 @@
-import React, { useState, useContext, useEffect } from "react";
-import { AuthContext } from "./AuthContext";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import axios from "axios";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  //to manage auth
-  const { login, auth } = useContext(AuthContext);
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,21 +18,20 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(formData);
-      console.log("???");
-      // alert("Login successful");
-      navigate("/");
+      const axiosInstance = axios.create({
+        withCredentials: true,
+        baseURL: "http://localhost:3000", // Replace with your backend URL
+      });
+
+      const response = await axiosInstance.post("/login", formData);
+
+      console.log(response.data);
+      alert("Login successful");
     } catch (error) {
       console.error("Login failed", error);
       alert("Login failed");
     }
   };
-
-  useEffect(() => {
-    if (auth?.loggedIn) {
-      navigate("/");
-    }
-  }, [auth?.loggedIn, navigate]);
 
   return (
     <form

@@ -1,9 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { AuthContext } from "./AuthContext";
-const Register = () => {
-  const { register, auth } = useContext(AuthContext);
 
+const Register = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -22,7 +20,11 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await register(formData);
+      const response = await axios.post(
+        "http://localhost:3000/register",
+        formData
+      );
+      console.log(response.data);
       alert("Registration successful");
     } catch (error) {
       console.error(error);
