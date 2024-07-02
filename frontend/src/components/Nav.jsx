@@ -27,19 +27,12 @@ const Nav = () => {
 
       <nav class="bg-white border-gray-200 dark:bg-gray-900">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-          <a
-            href="https://flowbite.com/"
-            class="flex items-center space-x-3 rtl:space-x-reverse"
-          >
-            <img
-              src="public/assets/logo.svg"
-              class="h-14"
-              alt="Flowbite Logo"
-            />
+          <Link to="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+            <img src="assets/logo.svg" class="h-14" alt="oj logo" />
             <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
               Judge
             </span>
-          </a>
+          </Link>
           <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
             <button
               type="button"
@@ -95,7 +88,7 @@ const Nav = () => {
                         src="/assets/pp.jpg"
                         alt="user photo"
                       />
-                      Abhishekh
+
                       <svg
                         className="w-2.5 h-2.5 ms-3"
                         aria-hidden="true"
@@ -122,7 +115,7 @@ const Nav = () => {
                     >
                       <div className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         <div className="font-medium">Pro User</div>
-                        <div className="truncate">name@flowbite.com</div>
+                        <div className="truncate">{auth["userEmail"]}</div>
                       </div>
                       <ul
                         className="py-2 text-sm text-gray-700 dark:text-gray-200"
@@ -143,14 +136,6 @@ const Nav = () => {
                           >
                             Profile
                           </Link>
-                        </li>
-                        <li>
-                          <a
-                            href="#"
-                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                          >
-                            Earnings
-                          </a>
                         </li>
                       </ul>
                       <div className="py-2">

@@ -6,12 +6,14 @@ const cookieParser = require('cookie-parser');
 const User = require('./models/Users');
 const Contest = require('./models/Contest');
 const bodyParser = require('body-parser');
-
+const executeCpp = require("./src/executeCpp.js")
 const cors = require('cors')
 const multer = require('multer');
 const path = require('path');
-
-
+const generateFile = require("./src/generateFile");
+const executeCppForRun = require("./src/executeCppForRun.js")
+const { log } = require('console');
+const fs = require("fs");
 // creating express app
 const app = express();
 
@@ -127,9 +129,6 @@ app.post('/logout', (req, res) => {
     res.status(200).send({ message: 'Logout successful' });
 });
 
-
-
-
 // Middleware to handle multipart/form-data and store files
 app.post('/create', upload.any(), async (req, res) => {
     console.log("create called ");
@@ -226,13 +225,26 @@ app.get('/problemsFromExpiredContests', async (req, res) => {
 
         // Query contests where end time is less than current date
         const contests = await Contest.find({ endTime: { $lt: currentDate } })
-            .populate('problems', 'name description testCases')
+            .populate('problems', 'name description testCases index') // Assuming problems have 'index' field
             .exec();
 
-        // Extract problems from all contests
+        // Extract problems with additional contest details
         let problems = [];
         contests.forEach(contest => {
-            problems.push(...contest.problems);
+            var idx = 0;
+            contest.problems.forEach(problem => {
+                problems.push({
+                    idx: idx,
+                    contestName: contest.contestName,
+                    contestId: contest._id,
+                    endTime: contest.endTime,
+                    problemName: problem.name,
+                    problemIndex: problem.index,
+                    description: problem.description,
+                    testCases: problem.testCases
+                });
+                idx++;
+            });
         });
 
         res.json(problems);
@@ -242,8 +254,179 @@ app.get('/problemsFromExpiredContests', async (req, res) => {
     }
 });
 
+
 // Static files route for uploaded files
+const uploadDir = path.join(`${__dirname}/src`, "uploads")
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(codeDir, { recursive: true });
+}
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
+app.post("/run", async (req, res) => {
+    const { language = "cpp", code, pretestIp } = req.body;
+    if (code === "") {
+        return res.status(400).json({ success: false, message: "Do write some code to submit!" });
+    }
+    try {
+        const filePath = await generateFile(language, code);
+        console.log("before output ");
+
+        // Execute the code with pretest inputs
+        const output = await executeCppForRun(filePath, pretestIp);
+
+        console.log("after output ");
+        res.send({ filePath, output });
+    } catch (err) {
+        console.error("Error executing code:", err);
+        res.status(500).json({ success: false, message: "Error executing code", error: err.message });
+    }
+});
+
+app.post("/submit", async (req, res) => {
+    const { language = "cpp", code, ipath, opath, contestId, index, email } = req.body;
+    console.log(email, " ", contestId, " ", index);
+
+    if (code === "") {
+        return res.status(400).json({ success: false, message: "Do write some code to submit!" });
+    }
+
+    try {
+        const filePath = await generateFile(language, code);
+
+        // Ensure the input file path is correct
+        const inputFileName = path.basename(ipath);
+        const inputFilePath = path.join(__dirname, "src", "uploads", inputFileName); // Correctly set input file path
+        console.log("filepath: ", filePath, "inputpath: ", inputFilePath);
+        const output = await executeCpp(filePath, inputFilePath);
+
+        // Ensure the output file path is correct
+        const outputFileName = path.basename(opath);
+        const outputFilePath = path.join(__dirname, "src", "uploads", outputFileName);
+        const expectedOutput = fs.readFileSync(outputFilePath, 'utf-8').trim();
+
+        let submissionResult;
+        let message;
+
+        if (output.trim() === expectedOutput) {
+            submissionResult = "ACC";
+            message = "Accepted";
+        } else {
+            submissionResult = "WA";
+            message = "Wrong Answer";
+        }
+
+        // Find the user by email and add the submission to their submissions array
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        user.submissions.push({
+            contestId,
+            submissionType: language,
+            problemIndex: index,
+            code,
+            result: submissionResult,
+            message,
+            receivedOutput: output.trim(),
+            expectedOutput
+        });
+
+        await user.save();
+
+        res.send({
+            success: submissionResult === "ACC",
+            message,
+            receivedOutput: output.trim(),
+            expectedOutput
+        });
+    } catch (err) {
+        console.error("Error executing code:", err);
+        res.status(500).json({ success: false, message: "Error executing code", error: err.message });
+    }
+});
+
+app.get('/submissions/:contestId/:index', async (req, res) => {
+    const { contestId, index } = req.params;
+    const userEmail = req.query.email; // Get userEmail from query params
+
+    try {
+        const user = await User.findOne({ email: userEmail });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const submissions = user.submissions.filter(submission => (
+            submission.contestId === contestId &&
+            submission.problemIndex === index
+        ));
+
+        res.json({ submissions });
+    } catch (err) {
+        console.error('Error fetching submissions:', err);
+        res.status(500).json({ message: 'Failed to fetch submissions' });
+    }
+});
+
+app.get('/:contestId/:index', async (req, res) => {
+    try {
+        const { contestId, index } = req.params;
+        const contest = await Contest.findById(contestId);
+
+        if (!contest) {
+            return res.status(404).send('Contest not found');
+        }
+
+        const problem = contest.problems[index];
+
+        if (!problem) {
+            return res.status(404).send('Problem not found');
+        }
+
+        res.json(problem);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server error');
+    }
+});
+
+//user profile
+// Route to fetch user by email
+app.get('/user', async (req, res) => {
+    try {
+        const email = req.query.email;
+        const user = await User.findOne({ email }).exec();
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json(user);
+    } catch (err) {
+        console.error('Error fetching user:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// profilePicture
+app.post('/uploadProfilePicture', upload.single('profilePicture'), async (req, res) => {
+    try {
+        const { email } = req.body;
+        const profilePicture = req.file.path;
+
+        const user = await User.findOneAndUpdate(
+            { email: email },
+            { profilePicture: profilePicture },
+            { new: true }
+        );
+
+        res.json(user);
+    } catch (err) {
+        console.error('Error uploading profile picture:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 app.listen(3000, () => {
     console.log("Server is listening on port 3000");

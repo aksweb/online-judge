@@ -1,3 +1,4 @@
+import "./App.css";
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Nav from "./components/Nav";
@@ -10,7 +11,7 @@ import { AuthProvider } from "./components/auth/AuthContext";
 import Contest from "./components/Contest";
 import ViewContest from "./components/ViewContest";
 import Problem from "./components/ProblemList";
-
+import ProblemPage from "./components/ProblemPage";
 const App = () => {
   return (
     <AuthProvider>
@@ -26,6 +27,11 @@ const App = () => {
             <Route path="/contest" element={<Contest />} />
             <Route path="/view/:contestId" element={<ViewContest />} />
             <Route path="/problems" element={<Problem />} />
+            {/* <Route path="/problempage" element={<ProblemPage />} /> */}
+            <Route
+              path="/problem/:contestId/:index"
+              element={<ProblemPage />}
+            />
           </Routes>
         </div>
       </Router>

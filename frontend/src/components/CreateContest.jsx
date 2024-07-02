@@ -11,8 +11,8 @@ const CreateContest = () => {
     testCases: "",
     expectedOutputs: "",
     images: [],
-    inputFile: null, // New state for input.txt file
-    outputFile: null, // New state for output.txt file
+    inputFile: null,
+    outputFile: null,
   };
 
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ const CreateContest = () => {
   const [duration, setDuration] = useState("");
   const [endtime, setEndtime] = useState("");
   const [starttime, setStarttime] = useState("");
-  const [error, setError] = useState(""); // Add this line
+  const [error, setError] = useState("");
   const { auth, createPost } = useContext(AuthContext);
 
   const addProblem = () => {
@@ -30,19 +30,13 @@ const CreateContest = () => {
 
   const handleProblemChange = (index, event) => {
     const { name, value, files } = event.target;
-    if (name === "inputFile") {
-      const updatedProblems = [...problems];
-      updatedProblems[index].inputFile = files[0];
-      setProblems(updatedProblems);
-    } else if (name === "outputFile") {
-      const updatedProblems = [...problems];
-      updatedProblems[index].outputFile = files[0];
-      setProblems(updatedProblems);
+    const updatedProblems = [...problems];
+    if (name === "inputFile" || name === "outputFile") {
+      updatedProblems[index][name] = files[0];
     } else {
-      const updatedProblems = [...problems];
-      updatedProblems[index] = { ...updatedProblems[index], [name]: value };
-      setProblems(updatedProblems);
+      updatedProblems[index][name] = value;
     }
+    setProblems(updatedProblems);
   };
 
   const handleImageChange = (index, event) => {
@@ -58,12 +52,6 @@ const CreateContest = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Basic form validation
-    // if (!contestName || !duration || !endtime || !starttime) {
-    //   setError("All fields are .");
-    //   return;
-    // }
-
     setLoading(true);
     setError("");
 
@@ -71,7 +59,7 @@ const CreateContest = () => {
     formData.append("useremail", auth.userEmail);
     formData.append("contestName", contestName);
     formData.append("duration", duration);
-    formData.append("startTime", new Date(starttime).toISOString()); // Ensure date-time format
+    formData.append("startTime", new Date(starttime).toISOString());
     formData.append("endTime", new Date(endtime).toISOString());
 
     problems.forEach((problem, index) => {
@@ -84,31 +72,28 @@ const CreateContest = () => {
         `problems[${index}][expectedOutputs]`,
         problem.expectedOutputs
       );
-      formData.append(`problems[${index}][inputFile]`, problem.inputFile); // Append input.txt file
-      formData.append(`problems[${index}][outputFile]`, problem.outputFile); // Append output.txt file
+      formData.append(`problems[${index}][inputFile]`, problem.inputFile);
+      formData.append(`problems[${index}][outputFile]`, problem.outputFile);
       problem.images.forEach((image, imgIndex) => {
         formData.append(`images-${index}`, image);
       });
     });
 
     try {
-      console.log("before creation: ", formData);
       await createPost(formData);
-      // Reset form after successful submission
       setContestName("");
       setDuration("");
       setStarttime("");
       setEndtime("");
       setProblems([initialProblemState]);
       setLoading(false);
-      //   Navigate("/");
     } catch (error) {
       setError("Error creating contest. Please try again.");
       setLoading(false);
     }
   };
 
-  if (!auth || auth.adminRole == false) {
+  if (!auth || auth.adminRole === false) {
     return <Navigate to="/" />;
   }
 
@@ -313,3 +298,4 @@ const CreateContest = () => {
 };
 
 export default CreateContest;
+  

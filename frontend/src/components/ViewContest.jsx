@@ -1,6 +1,6 @@
 // ViewContest.jsx
 import React, { useEffect, useState, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { AuthContext } from "./auth/AuthContext";
 
 const ViewContest = () => {
@@ -8,13 +8,14 @@ const ViewContest = () => {
   const [error, setError] = useState(null);
   const { contestId } = useParams();
   const { fetchContestById } = useContext(AuthContext);
-
+  const [cid, setCid] = useState("dummy");
   useEffect(() => {
     const getContest = async () => {
       try {
         console.log("inside view");
         const data = await fetchContestById(contestId);
         console.log(contestId);
+        setCid(contestId);
         console.log("data fetched in view: ", data);
         setContest(data);
       } catch (err) {
@@ -24,7 +25,7 @@ const ViewContest = () => {
     };
 
     getContest();
-  }, [contestId, fetchContestById]);
+  }, [contestId, fetchContestById, cid]);
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -35,7 +36,7 @@ const ViewContest = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 text-black">
       <h1 className="text-3xl font-bold mb-4">{contest.contestName}</h1>
       <p>
         <strong>Duration:</strong> {contest.duration}
@@ -71,7 +72,11 @@ const ViewContest = () => {
           <tbody className="bg-red-300 divide-y divide-gray-200 text-black">
             {contest.problems.map((problem, index) => (
               <tr key={index}>
-                <td className="px-6 py-4 whitespace-nowrap">{problem.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap hover:underline hover:text-blue-500">
+                  <Link to={`/problem/${contestId}/${index}`}>
+                    {problem.name}
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
