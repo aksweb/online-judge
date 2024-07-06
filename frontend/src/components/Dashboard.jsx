@@ -12,7 +12,7 @@ const Dashboard = () => {
   const [submissions, setSubmissions] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+  const BASE_URL = backend.cppjudge.in;
 
   // Fetch user data on component mount
   useEffect(() => {
