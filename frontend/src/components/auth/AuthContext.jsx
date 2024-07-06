@@ -1,10 +1,12 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import axios from "axios";
-import { Navigate } from "react-router-dom";
+
+// import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext();
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+// const navigate = useNavigate();
 
 export const fetchProblemsFromExpiredContests = async () => {
   try {
@@ -15,6 +17,7 @@ export const fetchProblemsFromExpiredContests = async () => {
     throw error;
   }
 };
+
 export const fetchContests = async () => {
   try {
     console.log("fet frommauth");
@@ -42,8 +45,20 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     const userEmail = localStorage.getItem("userEmail");
     const role = localStorage.getItem("role");
-    return token ? { loggedIn: true, token, role } : null;
+    return token ? { loggedIn: true, token, userEmail, role } : null;
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userEmail = localStorage.getItem("userEmail");
+    const role = localStorage.getItem("role");
+
+    if (token) {
+      setAuth({ loggedIn: true, token, userEmail, role });
+    } else {
+      setAuth(null);
+    }
+  }, []);
 
   const register = async (formData) => {
     try {
@@ -70,8 +85,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("userEmail", response.data.userEmail);
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("role", response.data.adminRole);
+      return { data: response.data, status: response.status };
     } catch (err) {
       console.error("Error logging in:", err);
+      return {
+        error: err.response?.data || "Unknown error",
+        status: err.response?.status || 500,
+      };
     }
   };
 
@@ -80,7 +100,9 @@ export const AuthProvider = ({ children }) => {
     setAuth(null);
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("userEmail");
   };
+
   const createPost = async (formData) => {
     try {
       // Log FormData entries

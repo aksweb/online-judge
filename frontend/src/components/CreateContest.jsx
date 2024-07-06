@@ -21,6 +21,7 @@ const CreateContest = () => {
   const [duration, setDuration] = useState("");
   const [endtime, setEndtime] = useState("");
   const [starttime, setStarttime] = useState("");
+  const [contestImage, setContestImage] = useState(null);
   const [error, setError] = useState("");
   const { auth, createPost } = useContext(AuthContext);
 
@@ -49,6 +50,10 @@ const CreateContest = () => {
     setProblems(updatedProblems);
   };
 
+  const handleContestImageChange = (event) => {
+    setContestImage(event.target.files[0]);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -61,6 +66,9 @@ const CreateContest = () => {
     formData.append("duration", duration);
     formData.append("startTime", new Date(starttime).toISOString());
     formData.append("endTime", new Date(endtime).toISOString());
+    if (contestImage) {
+      formData.append("contestImage", contestImage);
+    }
 
     problems.forEach((problem, index) => {
       formData.append(`problems[${index}][name]`, problem.name);
@@ -85,6 +93,7 @@ const CreateContest = () => {
       setDuration("");
       setStarttime("");
       setEndtime("");
+      setContestImage(null);
       setProblems([initialProblemState]);
       setLoading(false);
     } catch (error) {
@@ -99,14 +108,16 @@ const CreateContest = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Create Contest</h2>
+      <h2 className="text-2xl font-bold mb-4 dark:text-blue-950">
+        Create Contest
+      </h2>
       <form onSubmit={handleSubmit}>
         {error && <div className="mb-4 text-red-500">{error}</div>}
         <div className="grid gap-6 mb-6 md:grid-cols-2">
           <div>
             <label
               htmlFor="contestName"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
             >
               Contest Name
             </label>
@@ -121,7 +132,7 @@ const CreateContest = () => {
           <div>
             <label
               htmlFor="duration"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
             >
               Duration
             </label>
@@ -136,7 +147,7 @@ const CreateContest = () => {
           <div>
             <label
               htmlFor="starttime"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
             >
               Start Date and Time
             </label>
@@ -151,7 +162,7 @@ const CreateContest = () => {
           <div>
             <label
               htmlFor="endtime"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
             >
               Schedule Date and Time
             </label>
@@ -163,16 +174,32 @@ const CreateContest = () => {
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
           </div>
+          <div>
+            <label
+              htmlFor="contestImage"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
+            >
+              Contest Image
+            </label>
+            <input
+              type="file"
+              id="contestImage"
+              onChange={handleContestImageChange}
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            />
+          </div>
         </div>
 
         {problems.map((problem, index) => (
           <div key={index} className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">Problem {index + 1}</h3>
+            <h3 className="text-lg font-semibold mb-2 dark:text-blue-950">
+              Problem {index + 1}
+            </h3>
             <div className="grid gap-6">
               <div>
                 <label
                   htmlFor={`name-${index}`}
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
                 >
                   Problem Name
                 </label>
@@ -188,7 +215,7 @@ const CreateContest = () => {
               <div>
                 <label
                   htmlFor={`description-${index}`}
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
                 >
                   Problem Description
                 </label>
@@ -208,7 +235,7 @@ const CreateContest = () => {
               <div>
                 <label
                   htmlFor={`inputFile-${index}`}
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
                 >
                   Input File (input.txt)
                 </label>
@@ -223,7 +250,7 @@ const CreateContest = () => {
               <div>
                 <label
                   htmlFor={`outputFile-${index}`}
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
                 >
                   Output File (output.txt)
                 </label>
@@ -238,7 +265,7 @@ const CreateContest = () => {
               <div>
                 <label
                   htmlFor={`testCases-${index}`}
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
                 >
                   Test Cases
                 </label>
@@ -258,7 +285,7 @@ const CreateContest = () => {
               <div>
                 <label
                   htmlFor={`expectedOutputs-${index}`}
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
                 >
                   Expected Outputs
                 </label>
@@ -273,6 +300,22 @@ const CreateContest = () => {
                     e.target.style.height = "auto";
                     e.target.style.height = `${e.target.scrollHeight}px`;
                   }}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor={`images-${index}`}
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
+                >
+                  Problem Images
+                </label>
+                <input
+                  type="file"
+                  id={`images-${index}`}
+                  name="images"
+                  multiple
+                  onChange={(e) => handleImageChange(index, e)}
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 />
               </div>
             </div>
@@ -298,4 +341,3 @@ const CreateContest = () => {
 };
 
 export default CreateContest;
-  

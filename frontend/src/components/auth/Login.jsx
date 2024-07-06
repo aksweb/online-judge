@@ -22,13 +22,17 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(formData);
+      const res = await login(formData);
       console.log("???");
-      // alert("Login successful");
-      navigate("/");
+      if (res.status == 200) {
+        alert("Login successful");
+      } else {
+        alert(res.error);
+        console.log("ress ", res);
+      }
     } catch (error) {
-      console.error("Login failed", error);
-      alert("Login failed");
+      alert("Please try again");
+      console.error("Some error occured while logging.", error);
     }
   };
 
@@ -43,10 +47,10 @@ const Login = () => {
       onSubmit={handleSubmit}
       className="max-w-sm mx-auto min-h-screen mt-40"
     >
-      <div className="mb-5">
+      <div className="mb-5 ">
         <label
           htmlFor="email"
-          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
         >
           Email:
         </label>
@@ -62,7 +66,7 @@ const Login = () => {
       <div className="mb-5">
         <label
           htmlFor="password"
-          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
         >
           Password:
         </label>

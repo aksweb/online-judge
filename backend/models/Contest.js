@@ -22,6 +22,7 @@ const contestSchema = new Schema({
     duration: { type: String },
     startTime: { type: Date },
     endTime: { type: Date },
+    photo: { type: String },
     problems: [problemSchema], // Array of Problem schema
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', },
 });

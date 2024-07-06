@@ -12,7 +12,7 @@ if (!fs.existsSync(outputPath)) {
 const executeCpp = (filePath, inputFilePath) => {
     console.log(filePath);
     const jobId = path.basename(filePath).split(".")[0];
-    const fileName = `${jobId}.exe`;
+    const fileName = `${jobId}.out`;
     const outFilePath = path.join(outputPath, fileName);
     const tempInputFilePath = path.join(outputPath, `${jobId}_input.txt`);
 
@@ -39,7 +39,7 @@ const executeCpp = (filePath, inputFilePath) => {
                     }
 
                     // Execute the compiled code with input
-                    const command = `cd ${outputPath} && .\\${fileName} < ${tempInputFilePath}`;
+                    const command = `cd ${outputPath} && ./${fileName} < ${tempInputFilePath}`;
                     console.log("command: ", command);
                     exec(command, (runError, runStdout, runStderr) => {
                         // Cleanup temporary input file

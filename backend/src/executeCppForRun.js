@@ -5,6 +5,7 @@ const { exec } = require("child_process");
 const currDir = __dirname;
 const outputPath = path.join(currDir, "outputs");
 
+// Ensure the output directory exists
 if (!fs.existsSync(outputPath)) {
     fs.mkdirSync(outputPath, { recursive: true });
 }
@@ -12,13 +13,13 @@ if (!fs.existsSync(outputPath)) {
 const executeCppForRun = (filePath, pretestInput) => {
     console.log(filePath);
     const jobId = path.basename(filePath).split(".")[0];
-    const fileName = `${jobId}.exe`;
+    const fileName = `${jobId}.out`;
     const outFilePath = path.join(outputPath, fileName);
     const tempInputFilePath = path.join(outputPath, `${jobId}_input.txt`);
 
     return new Promise((resolve, reject) => {
         // Compile the code
-        exec(`g++ ${filePath} -o ${outFilePath}`, (compileError, stdout, stderr) => {
+        exec(`g++ ${filePath} -o ${outFilePath}`, { maxBuffer: 1024 * 1024 * 10 }, (compileError, stdout, stderr) => {
             if (compileError) {
                 return reject(compileError);
             }
@@ -33,15 +34,17 @@ const executeCppForRun = (filePath, pretestInput) => {
                 }
 
                 // Execute the compiled code with pretest input
-                const command = `cd ${outputPath} && .\\${fileName} < ${tempInputFilePath}`;
+                const command = `cd ${outputPath} && ./${fileName} < ${tempInputFilePath}`;
                 console.log("command: ", command);
-                exec(command, (runError, runStdout, runStderr) => {
-                    // Cleanup temporary input file
-                    fs.unlink(tempInputFilePath, (unlinkError) => {
-                        if (unlinkError) {
-                            console.error("Error cleaning up temp input file:", unlinkError);
-                        }
-                    });
+                exec(command, { maxBuffer: 1024 * 1024 * 10 }, (runError, runStdout, runStderr) => {
+                    // Cleanup temporary input file with a delay
+                    setTimeout(() => {
+                        fs.unlink(tempInputFilePath, (unlinkError) => {
+                            if (unlinkError) {
+                                console.error("Error cleaning up temp input file:", unlinkError);
+                            }
+                        });
+                    }, 100); // 100ms delay
 
                     if (runError) {
                         return reject(runError);

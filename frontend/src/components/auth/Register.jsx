@@ -1,8 +1,10 @@
 import React, { useState, useContext } from "react";
-import axios from "axios";
 import { AuthContext } from "./AuthContext";
+import { useNavigate } from "react-router-dom";
+
 const Register = () => {
   const { register, auth } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -24,6 +26,7 @@ const Register = () => {
     try {
       const response = await register(formData);
       alert("Registration successful");
+      navigate("/login");
     } catch (error) {
       console.error(error);
       alert("Registration failed");
@@ -38,7 +41,7 @@ const Register = () => {
       <div className="mb-5">
         <label
           htmlFor="username"
-          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
         >
           Username:
         </label>
@@ -54,7 +57,7 @@ const Register = () => {
       <div className="mb-5">
         <label
           htmlFor="email"
-          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
         >
           Email:
         </label>
@@ -70,7 +73,7 @@ const Register = () => {
       <div className="mb-5">
         <label
           htmlFor="password"
-          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          className="block mb-2 text-sm font-medium text-gray-900 dark:text-red-900"
         >
           Password:
         </label>
@@ -83,14 +86,7 @@ const Register = () => {
           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         />
       </div>
-      {/* <input
-        type="checkbox"
-        name="adminRole"
-        checked={formData.adminRole}
-        onChange={handleChange}
-        value=""
-        className="sr-only peer"
-      /> */}
+    
       <div>
         <label class="inline-flex items-center mb-5 cursor-pointer">
           <input
@@ -103,7 +99,7 @@ const Register = () => {
             class="sr-only peer"
           />
           <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+          <span class="ms-3 text-sm font-medium text-gray-900 dark:text-red-900">
             Planning want to organize contests
           </span>
         </label>

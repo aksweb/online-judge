@@ -1,27 +1,21 @@
 const mongoose = require('mongoose');
-const User = require('./models/Users'); // Replace with your User model location
 const { DBConnection } = require('./database/db')
-
+const Contest = require("./models/Contest")
 async function migrateUsers() {
     try {
         // Connect to MongoDB
 
         DBConnection();
 
-        // Add profilePicture field to existing users if it doesn't already exist
-        const users = await User.find();
-        for (const user of users) {
-            if (!user.profilePicture) {
-                user.profilePicture = ''; // Default value
-                await user.save();
-            }
-        }
-
-        console.log('Migration completed successfully');
-        mongoose.connection.close();
-    } catch (err) {
-        console.error('Error during migration:', err);
-        mongoose.connection.close();
+        const result = await Contest.updateMany(
+            { photo: { $exists: false } }, // Find contests where the photo field does not exist
+            { $set: { photo: '' } } // Set the default value for the photo field
+        );
+        console.log(`${result.nModified} contests updated with the new photo field`);
+    } catch (error) {
+        console.error('Error updating contests:', error);
+    } finally {
+        await mongoose.disconnect();
     }
 }
 

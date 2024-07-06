@@ -1,209 +1,174 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import HtmlPage from "./HtmlPage";
 const Home = () => {
+  const [contests, setContests] = useState([]);
+  const [showPreloader, setShowPreloader] = useState(true);
+  const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL;
+
+  useEffect(() => {
+    const fetchContests = async () => {
+      try {
+        const response = await axios.get(`${BACKEND_BASE}/getcontests`);
+        const contestsData = response.data;
+
+        const currentDate = new Date();
+        const pastContests = [];
+        const currentAndUpcomingContests = [];
+
+        contestsData.forEach((contest) => {
+          const endDate = new Date(contest.endTime);
+          if (endDate < currentDate) {
+            pastContests.push(contest);
+          } else {
+            currentAndUpcomingContests.push(contest);
+          }
+        });
+
+        pastContests.sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
+        currentAndUpcomingContests.sort(
+          (a, b) => new Date(a.startTime) - new Date(b.startTime)
+        );
+
+        setContests([...pastContests, ...currentAndUpcomingContests]);
+        //preloader
+        setTimeout(() => {
+          setShowPreloader(false); // Hide the preloader after 1.3 seconds
+        }, 1300);
+      } catch (error) {
+        console.error("Error fetching contests:", error);
+      }
+    };
+
+    fetchContests();
+  }, []);
+
   return (
-    <div className="flex flex-wrap lg:flex-nowrap">
-      {/* Recent Contest History */}
-      <div className="w-full lg:w-2/5 px-2 py-4 lg:px-4">
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="bg-primary p-4">
-            <h3 className="text-lg font-semibold text-white">Contest</h3>
-          </div>
-          <div className="p-4">
-            <div id="contest-table-permanent">
-              <h4 className="text-md font-semibold mb-2">Permanent Contests</h4>
-              <div className="overflow-auto">
-                <table className="table-auto w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left">Contest Name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="py-1">
-                        <a
-                          href="/contests/practice"
-                          className="text-blue-500 hover:underline"
-                        >
-                          practice contest
-                        </a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-1">
-                        <a
-                          href="/contests/practice2"
-                          className="text-blue-500 hover:underline"
-                        >
-                          AtCoder Library Practice Contest
-                        </a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+    <div className="flex flex-wrap lg:flex-nowrap text-black relative ">
+      {/* Contest History */}
+
+      {showPreloader && <HtmlPage src="/New.html" />}
+      {!showPreloader && (
+        <>
+          <div className="w-full  lg:w-2/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar">
+            <div className="bg-white bg-opacity-25 shadow-md rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-red-400 via-red-500 to-red-600 p-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Contest History
+                </h3>
+              </div>
+              <div className="p-4">
+                <div id="current-upcoming-contests">
+                  <h4 className="text-md font-semibold mb-2">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
+                    </span>
+                    Current & Upcoming Contests
+                  </h4>
+                  <ul className="list-disc pl-4">
+                    {contests
+                      .filter(
+                        (contest) => new Date(contest.endTime) >= new Date()
+                      )
+                      .map((contest) => (
+                        <li key={contest._id} className="py-1">
+                          <a className="text-red-500 hover:underline">
+                            {contest.contestName} -{" "}
+                            {new Date(contest.startTime).toLocaleDateString()}
+                          </a>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+                <hr className="my-4" />
+                <div id="past-contests">
+                  <h4 className="text-md font-semibold mb-2">Past Contests</h4>
+                  <ul className="list-disc pl-4">
+                    {contests
+                      .filter(
+                        (contest) => new Date(contest.endTime) < new Date()
+                      )
+                      .map((contest) => (
+                        <li key={contest._id} className="py-1">
+                          <Link
+                            to={`/view/${contest._id}`}
+                            className="text-red-500 hover:underline"
+                          >
+                            {contest.contestName} -{" "}
+                            {new Date(contest.endTime).toLocaleDateString()}
+                          </Link>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+                <br />
+
+                <p className="text-center">
+                  <Link to="/contest" className="text-red-500 hover:underline">
+                    View More
+                  </Link>
+                </p>
               </div>
             </div>
-            <hr className="my-4" />
-            <div id="contest-table-upcoming">
-              <h4 className="text-md font-semibold mb-2">Upcoming Contests</h4>
-              <div className="overflow-auto">
-                <table className="table-auto w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left" width="36%">
-                        Start Time
-                      </th>
-                      <th className="text-left">Contest Name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="py-1">
-                        <a
-                          href="http://www.timeanddate.com/worldclock/fixedtime.html?iso=20240629T2100&amp;p1=248"
-                          target="_blank"
-                          className="text-blue-500 hover:underline"
-                        >
-                          6/29(Sat) 17:30
-                        </a>
-                      </td>
-                      <td className="py-1">
-                        <a
-                          href="/contests/arc180"
-                          className="text-blue-500 hover:underline"
-                        >
-                          AtCoder Regular Contest 180
-                        </a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-1">
-                        <a
-                          href="http://www.timeanddate.com/worldclock/fixedtime.html?iso=20240630T2100&amp;p1=248"
-                          target="_blank"
-                          className="text-blue-500 hover:underline"
-                        >
-                          6/30(Sun) 17:30
-                        </a>
-                      </td>
-                      <td className="py-1">
-                        <a
-                          href="/contests/abc360"
-                          className="text-blue-500 hover:underline"
-                        >
-                          AtCoder Beginner Contest 360
-                        </a>
-                      </td>
-                    </tr>
-                    {/* Add more rows as needed */}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <hr className="my-4" />
-            <div id="contest-table-recent">
-              <h4 className="text-md font-semibold mb-2">Recent Contests</h4>
-              <div className="overflow-auto">
-                <table className="table-auto w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th className="text-left" width="36%">
-                        Start Time
-                      </th>
-                      <th className="text-left">Contest Name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="py-1">
-                        <a
-                          href="http://www.timeanddate.com/worldclock/fixedtime.html?iso=20240622T2100&amp;p1=248"
-                          target="_blank"
-                          className="text-blue-500 hover:underline"
-                        >
-                          6/22(Sat) 17:30
-                        </a>
-                      </td>
-                      <td className="py-1">
-                        <a
-                          href="/contests/abc359"
-                          className="text-blue-500 hover:underline"
-                        >
-                          UNIQUE VISION Programming Contest 2024 Summer
-                        </a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-1">
-                        <a
-                          href="http://www.timeanddate.com/worldclock/fixedtime.html?iso=20240616T1500&amp;p1=248"
-                          target="_blank"
-                          className="text-blue-500 hover:underline"
-                        >
-                          6/16(Sun) 11:30
-                        </a>
-                      </td>
-                      <td className="py-1">
-                        <a
-                          href="/contests/ahc034"
-                          className="text-blue-500 hover:underline"
-                        >
-                          Toyota Programming Contest 2024#6
-                        </a>
-                      </td>
-                    </tr>
-                    {/* Add more rows as needed */}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <br />
-            <p className="text-center">
-              <a href="/contests/" className="text-blue-500 hover:underline">
-                Detail
-              </a>
-            </p>
           </div>
-        </div>
-      </div>
-      {/* Recently Posted Contests */}
-      <div className="w-full lg:w-3/5 px-2 py-4 lg:px-4">
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="bg-primary p-4">
-            <h3 className="text-lg font-semibold text-white">
-              Recently Posted Contests
-            </h3>
-          </div>
-          <div className="p-4">
-            {/* Add details for recently posted contests here */}
-            <div>
-              <h4 className="text-md font-semibold mb-2">Recent Contests</h4>
-              <ul>
-                <li className="py-2 border-b border-gray-200">
-                  <a
-                    href="/contests/new1"
-                    className="text-blue-500 hover:underline"
+
+          {/* Recently Posted Contests */}
+          <div className="w-full lg:w-3/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar text-black relative">
+            <div className="bg-white bg-opacity-25 shadow-md rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-red-400 via-red-500 to-red-600 p-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Recently Posted Contests
+                </h3>
+              </div>
+
+              <div className="p-4">
+                {contests.map((contest) => (
+                  <div
+                    key={contest._id}
+                    className="mb-4 bg-gray-50 p-4 rounded-md shadow-sm transition duration-300 hover:shadow-lg"
                   >
-                    New Contest 1
-                  </a>
-                  <p className="text-sm text-gray-600">Posted on: 2024-06-28</p>
-                </li>
-                <li className="py-2 border-b border-gray-200">
-                  <a
-                    href="/contests/new2"
-                    className="text-blue-500 hover:underline"
-                  >
-                    New Contest 2
-                  </a>
-                  <p className="text-sm text-gray-600">Posted on: 2024-06-27</p>
-                </li>
-                {/* Add more recently posted contests as needed */}
-              </ul>
+                    <h4 className="text-md font-semibold mb-2 text-gray-800">
+                      {contest.contestName}
+                    </h4>
+                    <img
+                      src={`${BACKEND_BASE}/${contest.photo}`}
+                      alt={contest.contestName}
+                      className="mb-2 rounded-md shadow-sm"
+                    />
+                    <p>
+                      <strong>Start Date:</strong>{" "}
+                      {new Date(contest.startTime).toLocaleDateString()} <br />
+                      <strong>End Date:</strong>{" "}
+                      {new Date(contest.endTime).toLocaleDateString()} <br />
+                      <strong>Number of Problems:</strong>{" "}
+                      {contest.problems.length} <br />
+                      <strong>Created By:</strong> {contest.createdBy.username}
+                      <Link
+                        to={`/view/${contest._id}`}
+                        className="text-red-500 hover:text-red-700 underline ml-2"
+                      >
+                        View Contest
+                      </Link>
+                    </p>
+                    <img
+                      src="assets/down.png"
+                      className="animate-bounce w-6 h-6"
+                      style={{
+                        position: "fixed",
+                        bottom: "70px",
+                        right: "20px",
+                      }}
+                      alt="Down Arrow"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };

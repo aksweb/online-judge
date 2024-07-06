@@ -6,29 +6,46 @@ import { AuthContext } from "./auth/AuthContext";
 import CodeModal from "./CodeModal";
 
 const ProblemPage = () => {
-  const { param1, param2 } = useParams();
   const { contestId, index } = useParams();
   const [activeTab, setActiveTab] = useState("description");
   const [output, setOutput] = useState("");
-  const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("cpp");
+  const [code, setCode] = useState(`#include <bits/stdc++.h>
+using namespace std;
+#define ll long long int
+
+int main()
+{
+
+    int _;
+    cin >> _;
+    while (_--)
+    {
+        
+    }
+    return 0;
+}
+`);
   const [error, setError] = useState(null);
   const [prob, setProb] = useState("");
   const [ipath, setIpath] = useState("");
   const [opath, setOpath] = useState("");
   const [pretestIp, setPretestIp] = useState("");
-  const [submissions, setSubmissions] = useState([]); // State to store submissions
+  const [submissions, setSubmissions] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCode, setSelectedCode] = useState("");
+  const [images, setImages] = useState([]);
   const { auth } = useContext(AuthContext);
-
+  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
   useEffect(() => {
     const getProblem = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3000/${contestId}/${index}`
-        );
+        const response = await axios.get(`${BASE_URL}/${contestId}/${index}`);
         setProb(response.data);
+        setPretestIp(response.data.testCases);
+        setIpath(response.data.inputFile);
+        setOpath(response.data.outputFile);
+        setImages(response.data.images || []);
       } catch (err) {
         setError(err.message);
       }
@@ -39,8 +56,7 @@ const ProblemPage = () => {
   const handleRunCode = async () => {
     try {
       setOutput("Running code...");
-      setPretestIp(prob.testCases);
-      const response = await axios.post("http://localhost:3000/run", {
+      const response = await axios.post(`${BASE_URL}/run`, {
         language,
         code,
         pretestIp,
@@ -61,10 +77,9 @@ const ProblemPage = () => {
     try {
       const email = auth.userEmail;
       const response = await axios.get(
-        `http://localhost:3000/submissions/${contestId}/${index}?email=${email}`
+        `${BASE_URL}/submissions/${contestId}/${index}?email=${email}`
       );
 
-      // Sort submissions by dateTime in descending order
       const sortedSubmissions = response.data.submissions.sort(
         (a, b) => new Date(b.dateTime) - new Date(a.dateTime)
       );
@@ -83,7 +98,7 @@ const ProblemPage = () => {
         setOpath(prob.outputFile);
 
         const email = auth.userEmail;
-        const response = await axios.post("http://localhost:3000/submit", {
+        const response = await axios.post(`${BASE_URL}/submit`, {
           language,
           code,
           ipath,
@@ -102,6 +117,7 @@ const ProblemPage = () => {
         }
       } catch (err) {
         console.error("Submission error:", err);
+        setOutput(err.response.data.error);
       }
     } else {
       alert("Please login to make submission.");
@@ -119,18 +135,15 @@ const ProblemPage = () => {
   };
 
   return (
-    <div className="flex h-screen text-black">
+    <div className="flex h-screen bg-gray-900 text-white ">
       {modalOpen && <CodeModal code={selectedCode} closeModal={closeModal} />}
-      <div className="w-2/5 border-r border-gray-300 p-4">
+      <div className="w-2/5 border-r border-gray-800 p-4 overflow-y-scroll">
         <div className="flex mb-4">
           <button
             className={`flex-1 py-2 text-center ${
               activeTab === "description" ? "border-b-2 border-blue-500" : ""
             }`}
-            onClick={() => {
-              setActiveTab("description");
-              console.log(auth);
-            }}
+            onClick={() => setActiveTab("description")}
           >
             Description
           </button>
@@ -142,7 +155,7 @@ const ProblemPage = () => {
               }`}
               onClick={() => {
                 setActiveTab("submissions");
-                handleViewSubmission(); // Fetch submissions when switching to Submissions tab
+                handleViewSubmission();
               }}
             >
               Submissions
@@ -153,12 +166,29 @@ const ProblemPage = () => {
           <h2 className="text-xl font-bold mb-2">{prob.name}</h2>
           <h2 className="text-xl font-bold mb-2">Problem Description</h2>
           <p style={{ whiteSpace: "pre-line" }}>{prob.description}</p>
+
+          {images.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-xl font-bold mb-2">Images</h3>
+              {images.map((image, idx) => (
+                <img
+                  key={idx}
+                  src={`${BASE_URL}/${image}`}
+                  alt={`Problem Image ${idx + 1}`}
+                  className="mb-2"
+                  style={{ maxWidth: "100%", maxHeight: "400px" }}
+                />
+              ))}
+            </div>
+          )}
+
           <h3 className="text-xl font-bold mb-2">Test Cases</h3>
           <h4 className="text-xl font-bold mb-2">Sample Input</h4>
           <p style={{ whiteSpace: "pre-line" }}>{prob.testCases}</p>
           <h4 className="text-xl font-bold mb-2">Sample Output</h4>
           <p style={{ whiteSpace: "pre-line" }}>{prob.expectedOutputs}</p>
           <h3 className="text-xl font-bold mb-2">Constraints</h3>
+          <p>Time limit : 1 second</p>
         </div>
 
         <div className={activeTab === "submissions" ? "block" : "hidden"}>
@@ -207,7 +237,7 @@ const ProblemPage = () => {
       <div className="w-3/5 flex flex-col p-4">
         <div className="mb-2">
           <select
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded bg-gray-800 text-white"
             onChange={(e) => setLanguage(e.target.value)}
             value={language}
           >
@@ -230,13 +260,13 @@ const ProblemPage = () => {
         />
         <div className="flex mt-2">
           <button
-            className="flex-1 py-2 px-4 bg-blue-500 text-white rounded mr-2"
+            className="flex-1 py-2 px-4 bg-blue-500 text-white rounded mr-2 hover:bg-blue-600 transition duration-300"
             onClick={handleRunCode}
           >
             Run
           </button>
           <button
-            className="flex-1 py-2 px-4 bg-blue-500 text-white rounded"
+            className="flex-1 py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300"
             onClick={handleSubmitCode}
           >
             Submit
@@ -244,7 +274,7 @@ const ProblemPage = () => {
         </div>
         <div className="mt-2">
           <h3 className="text-lg font-bold">Output</h3>
-          <pre className="p-2 border border-gray-300 rounded bg-gray-100 whitespace-pre-wrap max-h-40 overflow-y-auto">
+          <pre className="p-2 border border-gray-300 rounded bg-gray-800 text-white max-h-40 overflow-y-auto">
             {output}
           </pre>
         </div>

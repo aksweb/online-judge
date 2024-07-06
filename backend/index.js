@@ -35,14 +35,26 @@ DBConnection();
 // Multer configuration for image storage
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+        if (file.fieldname.startsWith('images-') || file.fieldname === 'contestImage' || file.fieldname === 'profilePhoto') {
+            cb(null, 'src/uploads/images/');
+        } else {
+            cb(null, 'src/uploads/');
+        }
     },
     filename: function (req, file, cb) {
         cb(null, Date.now() + '-' + file.originalname);
     },
 });
-
 const upload = multer({ storage: storage });
+
+const imagesDir = path.join(__dirname, 'src/uploads/images');
+if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir, { recursive: true });
+}
+app.use('/uploads/images', express.static(path.join(__dirname, 'src', 'uploads', 'images')));
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
+
+
 // routes
 app.get('/', (req, res) => {
     res.send('Hello World');
@@ -135,7 +147,8 @@ app.post('/create', upload.any(), async (req, res) => {
     console.log("problems : ", req.body.problems);
 
     const { useremail, contestName, duration, startTime, endTime } = req.body;
-    console.log("files: ", req.body.files);
+    console.log("files: ", req.files);
+
     try {
         // Parse problems data from req.body.problems
         let problems = req.body.problems;
@@ -145,12 +158,20 @@ app.post('/create', upload.any(), async (req, res) => {
 
         // Attach file paths if files are uploaded
         problems = problems.map((problem, index) => {
+            const images = req.files
+                .filter(file => file.fieldname.startsWith(`images-${index}`))
+                .map(file => path.join('uploads/images', path.basename(file.path)));
+
             return {
                 ...problem,
-                inputFile: req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.path || '',
-                outputFile: req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.path || ''
+                inputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.path || '')),
+                outputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.path || '')),
+                images
             };
         });
+
+        // Attach contest image if uploaded
+        const contestImage = path.join('uploads/images', path.basename(req.files.find(file => file.fieldname === 'contestImage')?.path || ''));
 
         // Find the user
         let user = await User.findOne({ email: useremail });
@@ -165,6 +186,7 @@ app.post('/create', upload.any(), async (req, res) => {
             startTime: new Date(startTime),
             endTime: new Date(endTime),
             problems,
+            photo: contestImage,
             createdBy: user._id,
         });
 
@@ -181,6 +203,8 @@ app.post('/create', upload.any(), async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+
+
 
 //get contests
 app.get('/getcontests', async (req, res) => {
@@ -256,11 +280,10 @@ app.get('/problemsFromExpiredContests', async (req, res) => {
 
 
 // Static files route for uploaded files
-const uploadDir = path.join(`${__dirname}/src`, "uploads")
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(codeDir, { recursive: true });
-}
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// const uploadDir = path.join(`${__dirname}/src`, "uploads")
+// if (!fs.existsSync(uploadDir)) {
+//     fs.mkdirSync(codeDir, { recursive: true });
+// }
 
 
 app.post("/run", async (req, res) => {
@@ -269,6 +292,7 @@ app.post("/run", async (req, res) => {
         return res.status(400).json({ success: false, message: "Do write some code to submit!" });
     }
     try {
+        console.log("pretests are: ", pretestIp);
         const filePath = await generateFile(language, code);
         console.log("before output ");
 
@@ -292,23 +316,37 @@ app.post("/submit", async (req, res) => {
     }
 
     try {
+        const normalizeNewlines = (text) => {
+            return text.replace(/\r\n/g, "\n"); // Convert Windows-style newlines to Unix-style newlines
+        };
         const filePath = await generateFile(language, code);
 
         // Ensure the input file path is correct
         const inputFileName = path.basename(ipath);
-        const inputFilePath = path.join(__dirname, "src", "uploads", inputFileName); // Correctly set input file path
+        const inputFilePath = path.join(__dirname, "src", inputFileName); // Correctly set input file path
         console.log("filepath: ", filePath, "inputpath: ", inputFilePath);
-        const output = await executeCpp(filePath, inputFilePath);
+
+        // here check the filePath and inputFiilePath to replace \\ with /
+        // Replace backslashes with forward slashes in the file paths
+        const correctedFilePath = filePath.replace(/\\/g, '/');
+        const correctedInputFilePath = inputFilePath.replace(/\\/g, '/');
+
+        // Send the corrected file paths to executeCpp
+        const output = await executeCpp(correctedFilePath, correctedInputFilePath);
+
+        // const output = await executeCpp(filePath, inputFilePath);
 
         // Ensure the output file path is correct
         const outputFileName = path.basename(opath);
-        const outputFilePath = path.join(__dirname, "src", "uploads", outputFileName);
-        const expectedOutput = fs.readFileSync(outputFilePath, 'utf-8').trim();
+        const outputFilePath = path.join(__dirname, "src", outputFileName);
+        const correctedOutputFilePath = outputFilePath.replace(/\\/g, '/');
 
+        const expectedOutput = fs.readFileSync(correctedOutputFilePath, 'utf-8').trim();
+        const corrExpectedOutput = normalizeNewlines(expectedOutput);
         let submissionResult;
         let message;
 
-        if (output.trim() === expectedOutput) {
+        if (output.trim() === corrExpectedOutput) {
             submissionResult = "ACC";
             message = "Accepted";
         } else {
@@ -408,22 +446,34 @@ app.get('/user', async (req, res) => {
     }
 });
 
-// profilePicture
-app.post('/uploadProfilePicture', upload.single('profilePicture'), async (req, res) => {
+
+
+// Route to handle profile picture upload
+app.post('/uploadProfilePic', upload.single('profilePhoto'), async (req, res) => {
     try {
-        const { email } = req.body;
-        const profilePicture = req.file.path;
+        console.log("called");
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
 
-        const user = await User.findOneAndUpdate(
-            { email: email },
-            { profilePicture: profilePicture },
-            { new: true }
-        );
+        // Update the user's profile picture in the database
+        const userEmail = req.body.userEmail; // Assuming user email is sent from frontend
+        const profileImagePath = path.join('uploads/images', req.file.filename);
 
-        res.json(user);
-    } catch (err) {
-        console.error('Error uploading profile picture:', err);
-        res.status(500).json({ error: err.message });
+        let user = await User.findOne({ email: userEmail });
+        if (!user) {
+            console.log("user not found");
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update user's profile picture field
+        user.profilePicture = profileImagePath;
+        await user.save();
+
+        res.status(200).json({ message: 'Profile picture updated successfully', imagePath: profileImagePath });
+    } catch (error) {
+        console.error('Error uploading profile photo:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

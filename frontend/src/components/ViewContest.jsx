@@ -1,4 +1,3 @@
-// ViewContest.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import { AuthContext } from "./auth/AuthContext";
@@ -8,24 +7,19 @@ const ViewContest = () => {
   const [error, setError] = useState(null);
   const { contestId } = useParams();
   const { fetchContestById } = useContext(AuthContext);
-  const [cid, setCid] = useState("dummy");
+
   useEffect(() => {
     const getContest = async () => {
       try {
-        console.log("inside view");
         const data = await fetchContestById(contestId);
-        console.log(contestId);
-        setCid(contestId);
-        console.log("data fetched in view: ", data);
         setContest(data);
       } catch (err) {
-        console.log("failed fetching conttest by id");
         setError(err.message);
       }
     };
 
     getContest();
-  }, [contestId, fetchContestById, cid]);
+  }, [contestId, fetchContestById]);
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -36,7 +30,7 @@ const ViewContest = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 text-black">
+    <div className="container mx-auto p-4 chinese-theme">
       <h1 className="text-3xl font-bold mb-4">{contest.contestName}</h1>
       <p>
         <strong>Duration:</strong> {contest.duration}
@@ -69,7 +63,7 @@ const ViewContest = () => {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-red-300 divide-y divide-gray-200 text-black">
+          <tbody className="bg-gray-100 divide-y divide-gray-200 text-black">
             {contest.problems.map((problem, index) => (
               <tr key={index}>
                 <td className="px-6 py-4 whitespace-nowrap hover:underline hover:text-blue-500">
