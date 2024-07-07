@@ -36,7 +36,7 @@ int main()
   const [selectedCode, setSelectedCode] = useState("");
   const [images, setImages] = useState([]);
   const { auth } = useContext(AuthContext);
-  const BASE_URL = backend.cppjudge.in;
+  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
   useEffect(() => {
     const getProblem = async () => {
       try {
