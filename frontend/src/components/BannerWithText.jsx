@@ -9,7 +9,7 @@ const generateBannerWithText = (contestName, startDate) => {
       canvas.height = img.height;
 
       context.drawImage(img, 0, 0);
-      context.font = "bold 20px 'Playwrite CU', sans-serif";
+      context.font = "bold 35px 'Playwrite CU', sans-serif";
       context.fillStyle = "white";
       context.textAlign = "left";
 
