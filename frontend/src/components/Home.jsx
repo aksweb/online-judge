@@ -61,7 +61,7 @@ const Home = () => {
             
               <marquee className="text-gray-50 styl text-l pb-2 font-mono">
                 To host a contest, register as a contest creator by turning ON
-                the checkbox. Your current status is{" "}
+                the checkbox.
                 {localStorage.getItem("role")}
               </marquee>
             
