@@ -31,10 +31,7 @@ const Nav = () => {
           to="/"
           className="flex items-center space-x-3 rtl:space-x-reverse"
         >
-          <img src="assets/logo.png" className="h-14" alt="oj logo" />
-          <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-            Judge
-          </span>
+          <img src="assets/logo.png" className="h-16" alt="oj logo" />
         </Link>
 
         <button

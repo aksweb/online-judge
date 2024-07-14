@@ -20,7 +20,7 @@ const Clock = () => {
     position: "fixed",
     bottom: "20px",
     right: "20px",
-    backgroundColor: isTransparent ? "rgba(255, 255, 255, 0.5)" : "#333",
+    backgroundColor: isTransparent ? "rgba(255, 255, 255, 0)" : "#333",
     color: "#fff",
     padding: "10px 20px",
     borderRadius: "5px",

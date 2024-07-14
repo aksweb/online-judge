@@ -13,6 +13,7 @@ import Problem from "./components/ProblemList";
 import ProblemPage from "./components/ProblemPage";
 import Clock from "./components/Clock";
 import Dashboard from "./components/Dashboard";
+import Footer from "./components/Footer";
 const App = () => {
   return (
     <AuthProvider>
@@ -35,6 +36,7 @@ const App = () => {
             <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
           <Clock />
+          <Footer />
         </div>
       </Router>
     </AuthProvider>

@@ -31,12 +31,33 @@ export const fetchContests = async () => {
 
 export const fetchContestById = async (contestId) => {
   try {
-    console.log("Fetching contest by ID:", contestId);
     const response = await axios.get(`${BASE_URL}/contest/${contestId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching contest:", error);
     throw error;
+  }
+};
+const fetchSubmissionsByContestId = async (contestId) => {
+  console.log("Fetching contest by ID:", contestId);
+  const response = await fetch(`${BASE_URL}/contest/${contestId}`);
+  const data = await response.json();
+  // console.log(data);
+  // cont daata2 = response.submissions;
+  console.log("fetched contest");
+  return data;
+};
+
+const calculateRankings = async (contestId) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/calculateRankings`, {
+      contestId,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Error calculating rankings"
+    );
   }
 };
 
@@ -130,6 +151,8 @@ export const AuthProvider = ({ children }) => {
         fetchContests,
         fetchContestById,
         problemsFromExpiredContests: fetchProblemsFromExpiredContests,
+        calculateRankings,
+        fetchSubmissionsByContestId,
       }}
     >
       {children}

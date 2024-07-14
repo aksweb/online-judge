@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "./auth/AuthContext";
-
+import generateBannerWithText from "./BannerWithText";
 const CreateContest = () => {
   const initialProblemState = {
     name: "",
@@ -66,8 +66,21 @@ const CreateContest = () => {
     formData.append("duration", duration);
     formData.append("startTime", new Date(starttime).toISOString());
     formData.append("endTime", new Date(endtime).toISOString());
+
     if (contestImage) {
       formData.append("contestImage", contestImage);
+    } else {
+      try {
+        const defaultImage = await generateBannerWithText(
+          contestName,
+          starttime
+        );
+        formData.append("contestImage", defaultImage);
+      } catch (error) {
+        setError("Error generating default contest image. Please try again.");
+        setLoading(false);
+        return;
+      }
     }
 
     problems.forEach((problem, index) => {
