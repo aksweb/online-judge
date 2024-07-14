@@ -58,10 +58,15 @@ const Home = () => {
         {showPreloader && <HtmlPage src="/New.html" />}
         {!showPreloader && (
           <>
-            <marquee className="text-gray-50 styl text-l pb-2 font-mono">
-              To host a contest, register as a contest creator by turning ON the
-              checkbox.
-            </marquee>
+            {localStorage.getItem("auth") ? (
+              <marquee className="text-gray-50 styl text-l pb-2 font-mono">
+                To host a contest, register as a contest creator by turning ON
+                the checkbox. Your current status is{" "}
+                {localStorage.getItem("role")}
+              </marquee>
+            ) : (
+              ""
+            )}
             <div className="flex flex-wrap lg:flex-nowrap text-black relative">
               <div className="w-full  lg:w-2/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar">
                 <div className="bg-white bg-opacity-25 shadow-md rounded-lg overflow-hidden">
