@@ -37,6 +37,9 @@ int main()
   const [images, setImages] = useState([]);
   const { auth } = useContext(AuthContext);
   const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+  const BUCKET_NAME = import.meta.env.VITE_BUCKET_NAME;
+  const AWS_REGION = import.meta.env.VITE_AWS_REGION;
+
   useEffect(() => {
     const getProblem = async () => {
       try {
@@ -170,15 +173,20 @@ int main()
           {images.length > 0 && (
             <div className="mb-4">
               <h3 className="text-xl font-bold mb-2">Images</h3>
-              {images.map((image, idx) => (
-                <img
-                  key={idx}
-                  src={`${BASE_URL}/${image}`}
-                  alt={`Problem Image ${idx + 1}`}
-                  className="mb-2"
-                  style={{ maxWidth: "100%", maxHeight: "400px" }}
-                />
-              ))}
+              {images.map((image, idx) => {
+                return (
+                  <img
+                    key={idx}
+                    src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${image.replace(
+                      /\\/g,
+                      "/"
+                    )}`}
+                    alt={`Problem Image ${idx + 1}`}
+                    className="mb-2"
+                    style={{ maxWidth: "100%", maxHeight: "400px" }}
+                  />
+                );
+              })}
             </div>
           )}
 

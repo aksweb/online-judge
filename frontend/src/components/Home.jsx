@@ -8,6 +8,9 @@ const Home = () => {
   const [showPreloader, setShowPreloader] = useState(true);
   const BACKEND_BASE = import.meta.env.VITE_BACKEND_URL;
 
+  const BUCKET_NAME = import.meta.env.VITE_BUCKET_NAME;
+  const AWS_REGION = import.meta.env.VITE_AWS_REGION;
+
   useEffect(() => {
     const fetchContests = async () => {
       try {
@@ -58,13 +61,12 @@ const Home = () => {
         {showPreloader && <HtmlPage src="/New.html" />}
         {!showPreloader && (
           <>
-            
-              <marquee className="text-gray-50 styl text-l pb-2 font-mono">
-                To host a contest, register as a contest creator by turning ON
-                the checkbox.
-                {localStorage.getItem("role")}
-              </marquee>
-            
+            <marquee className="text-gray-50 styl text-l pb-2 font-mono">
+              To host a contest, register as a contest creator by turning ON the
+              checkbox.
+              {localStorage.getItem("role")}
+            </marquee>
+
             <div className="flex flex-wrap lg:flex-nowrap text-black relative">
               <div className="w-full  lg:w-2/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar">
                 <div className="bg-white bg-opacity-25 shadow-md rounded-lg overflow-hidden">
@@ -159,9 +161,16 @@ const Home = () => {
                       >
                         <h4 className="text-md font-semibold mb-2 text-gray-800">
                           {contest.contestName}
+                          {`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${contest.photo.replace(
+                            /\\/g,
+                            "/"
+                          )}`}
                         </h4>
                         <img
-                          src={`${BACKEND_BASE}/${contest.photo}`}
+                          src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${contest.photo.replace(
+                            /\\/g,
+                            "/"
+                          )}`}
                           alt={contest.contestName}
                           className="mb-2 rounded-md shadow-sm w-full h-auto max-h-64 object-fill"
                         />

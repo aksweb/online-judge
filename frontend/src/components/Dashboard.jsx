@@ -13,7 +13,8 @@ const Dashboard = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
+  const BUCKET_NAME = import.meta.env.VITE_BUCKET_NAME;
+  const AWS_REGION = import.meta.env.VITE_AWS_REGION;
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
@@ -114,7 +115,10 @@ const Dashboard = () => {
               {profilePhoto ? (
                 <>
                   <img
-                    src={`${BASE_URL}/${profilePhoto}`}
+                    src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${profilePhoto.replace(
+                      /\\/g,
+                      "/"
+                    )}`}
                     alt="Profile"
                     className="w-36 h-36 rounded-3xl border-2 border-gray-600"
                   />
