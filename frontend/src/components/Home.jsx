@@ -64,7 +64,6 @@ const Home = () => {
             <marquee className="text-gray-50 styl text-l pb-2 font-mono">
               To host a contest, register as a contest creator by turning ON the
               checkbox.
-              {localStorage.getItem("role")}
             </marquee>
 
             <div className="flex flex-wrap lg:flex-nowrap text-black relative">
@@ -161,10 +160,6 @@ const Home = () => {
                       >
                         <h4 className="text-md font-semibold mb-2 text-gray-800">
                           {contest.contestName}
-                          {`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${contest.photo.replace(
-                            /\\/g,
-                            "/"
-                          )}`}
                         </h4>
                         <img
                           src={`https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${contest.photo.replace(
