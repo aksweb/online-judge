@@ -25,6 +25,14 @@ const contestSchema = new Schema({
     photo: { type: String },
     problems: [problemSchema], // Array of Problem schema
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', },
+    registrations: [{ type: String }],
+    rankings: [{
+        solved: [{ type: Number }],
+        userEmail: { type: String },
+        score: { type: Number },
+        submissions: { type: Number },
+        lastSubmissionTime: { type: Date }
+    }],
 });
 
 const Contest = mongoose.model('Contest', contestSchema);

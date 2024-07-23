@@ -8,6 +8,7 @@ const Contest = require('./models/Contest');
 const bodyParser = require('body-parser');
 const executeCpp = require("./src/executeCpp.js")
 const cors = require('cors')
+const multer = require('multer');
 const path = require('path');
 const generateFile = require("./src/generateFile");
 const executeCppForRun = require("./src/executeCppForRun.js")
@@ -17,281 +18,44 @@ const executeJavaForRun = require("./src/executeJavaForRun");
 const executeJava = require("./src/executeJava");
 const { log } = require('console');
 const fs = require("fs");
-const AWS = require('aws-sdk');
-const multer = require('multer');
-const multerS3 = require('multer-s3');
-const { promisify } = require('util');
-
-// Load environment variables from .env file
-require('dotenv').config();
-
-// Create express app
+// creating express app
 const app = express();
 
-// Middlewares
+// middlewares
 app.use(express.json());
+// app.use(cors());
+// app.use(cors({ credentials: true }))
 app.use(cors({
-    origin: 'https://www.cppjudge.in', // Replace with your frontend URL
+    origin: 'http://127.0.0.1:5173', // Replace with your frontend URL
     credentials: true  // Allow credentials (cookies)
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); app.use(cookieParser());
 
-// Configure AWS SDK with your credentials and region
-const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION
-});
 
-// Multer configuration for S3 storage
-const upload = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: process.env.AWS_BUCKET_NAME,
-        acl: 'public-read',
-        key: function (req, file, cb) {
-            let folder = 'uploads/';
-            if (file.fieldname === 'profilePhoto') {
-                folder += 'images/profiles/';
-            } else if (file.fieldname === 'contestImage') {
-                folder += 'images/contests/';
-            } else if (file.fieldname.startsWith('images')) {
-                folder += 'images/contests/problemImages/';
-            } else if (file.fieldname.startsWith('inputFile') || file.fieldname.startsWith('outputFile')) {
-                folder += 'testcases/';
-            }
-            const filename = Date.now() + '-' + file.originalname;
-            cb(null, folder + filename);
+// Multer configuration for image storage
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        if (file.fieldname.startsWith('images-') || file.fieldname === 'contestImage' || file.fieldname === 'profilePhoto') {
+            cb(null, 'src/uploads/images/');
+        } else {
+            cb(null, 'src/uploads/');
         }
-    })
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname);
+    },
 });
+const upload = multer({ storage: storage });
 
-// Middleware to serve static files from S3
+const imagesDir = path.join(__dirname, 'src/uploads/images');
+if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir, { recursive: true });
+}
+app.use('/uploads/images', express.static(path.join(__dirname, 'src', 'uploads', 'images')));
 app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
-// Example route to handle submission
-// Function to normalize newlines
-const normalizeNewlines = (text) => {
-    return text.replace(/\r\n/g, "\n"); // Convert Windows-style newlines to Unix-style newlines
-};
-
-// Function to normalize file paths for S3
-const normalizeFilePath = (filePath) => {
-    return filePath.replace(/\\/g, '/');
-};
-// API endpoint to handle code submission
-// Write to a temporary file
-const writeTempFile = async (data) => {
-    const tempDir = path.join(__dirname, 'temp');
-    if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir);
-    }
-    const tempFilePath = path.join(tempDir, `${Date.now()}-input.txt`);
-    await promisify(fs.writeFile)(tempFilePath, data);
-    return tempFilePath;
-};
-
-// API endpoint to handle code submission
-app.post("/submit", async (req, res) => {
-    const { language = "cpp", code, ipath, opath, contestId, index, email } = req.body;
-
-    if (code === "") {
-        return res.status(400).json({ success: false, message: "Do write some code to submit!" });
-    }
-
-    try {
-        // Generate file on the fly (if needed)
-        const filePath = await generateFile(language, code);
-
-        // Normalize input and output file paths
-        const inputFilePath = normalizeFilePath(ipath);
-        const outputFilePath = normalizeFilePath(opath);
-
-        // Read input file directly from S3
-        const inputParams = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: inputFilePath
-        };
-        const inputText = await s3.getObject(inputParams).promise()
-            .then(data => data.Body.toString('utf-8'));
-
-        // Write inputText to a temporary file
-        const tempInputFilePath = await writeTempFile(inputText);
-
-        // Execute code based on language
-        let output;
-        if (language === "cpp") output = await executeCpp(filePath, tempInputFilePath);
-        else if (language === "java") output = await executeJava(filePath, tempInputFilePath);
-        else if (language === "python") output = await executePython(filePath, tempInputFilePath);
-        else return res.status(500).json({ success: false, message: "Unexpected language selected" });
-
-        // Read expected output file directly from S3
-        const outputParams = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: outputFilePath
-        };
-        const expectedOutput = await s3.getObject(outputParams).promise()
-            .then(data => data.Body.toString('utf-8'));
-
-        const normalizedOutput = normalizeNewlines(output.trim());
-
-        let submissionResult, message;
-        if (normalizedOutput === normalizeNewlines(expectedOutput.trim())) {
-            submissionResult = "ACC";
-            message = "Accepted";
-        } else {
-            submissionResult = "WA";
-            message = "Wrong Answer";
-        }
-
-        // Update user's submissions
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-
-        user.submissions.push({
-            contestId,
-            submissionType: language,
-            problemIndex: index,
-            code,
-            result: submissionResult,
-            message,
-            receivedOutput: normalizedOutput,
-            expectedOutput: normalizeNewlines(expectedOutput.trim())
-        });
-        await user.save();
-
-        const currentTime = new Date();
-
-        // Update contest rankings if submission is accepted
-        const contest = await Contest.findById(contestId);
-        if (submissionResult === "ACC" && currentTime < new Date(contest.endTime)) {
-            if (!contest) {
-                return res.status(404).json({ success: false, message: "Contest not found" });
-            }
-
-            if (contest.registrations.includes(email)) {
-                let rankedUser = contest.rankings.find(user => user.userEmail === email);
-
-                if (!rankedUser) {
-                    rankedUser = {
-                        solved: [],
-                        userEmail: email,
-                        score: 0,
-                        submissions: 0,
-                        lastSubmissionTime: null
-                    };
-                    rankedUser.solved.push(index);
-                    rankedUser.score += ((index + 1) * 50);
-                    rankedUser.lastSubmissionTime = new Date();
-                    rankedUser.submissions += 1;
-                    contest.rankings.push(rankedUser);
-                }
-
-                if (!rankedUser.solved.includes(index)) {
-                    rankedUser.solved.push(index);
-                    rankedUser.score += (index + 1) * 50;
-                    rankedUser.lastSubmissionTime = new Date();
-                    rankedUser.submissions += 1;
-                }
-
-                console.log(rankedUser);
-                await contest.save();
-            }
-        }
-
-        res.send({
-            success: submissionResult === "ACC",
-            message,
-            receivedOutput: normalizedOutput,
-            expectedOutput: normalizeNewlines(expectedOutput.trim())
-        });
-
-    } catch (err) {
-        console.error("Error executing code:", err);
-        res.status(500).json({ success: false, message: "Error executing code", error: err.message });
-    }
-});
-
-
-// Example route to create contest with files
-app.post('/create', upload.any(), async (req, res) => {
-    const { useremail, contestName, duration, startTime, endTime } = req.body;
-
-    try {
-        let problems = req.body.problems;
-        if (typeof problems === 'string') {
-            problems = JSON.parse(problems);
-        }
-
-        problems = problems.map((problem, index) => {
-            const images = req.files
-                .filter(file => file.fieldname.startsWith(`images-${index}`))
-                .map(file => path.join('uploads/images/contests/problemImages', path.basename(file.key)));
-
-            return {
-                ...problem,
-                inputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.key || '')),
-                outputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.key || '')),
-                images
-            };
-        });
-
-        const contestImage = path.join('uploads/images/contests', path.basename(req.files.find(file => file.fieldname === 'contestImage')?.key || ''));
-
-        let user = await User.findOne({ email: useremail });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        const newContest = new Contest({
-            contestName,
-            duration,
-            startTime: new Date(startTime),
-            endTime: new Date(endTime),
-            problems,
-            photo: contestImage,
-            createdBy: user._id,
-        });
-
-        const savedContest = await newContest.save();
-
-        user.contests.push(savedContest._id);
-        await user.save();
-
-        res.status(201).json({ message: 'Contest created successfully!', contest: savedContest });
-    } catch (error) {
-        console.error('Error creating contest:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
-
-// Example route to handle profile picture upload
-app.post('/uploadProfilePic', upload.single('profilePhoto'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
-
-        const userEmail = req.body.userEmail;
-        const profileImagePath = path.join('uploads/images/profiles/', path.basename(req.file.key));
-
-        let user = await User.findOne({ email: userEmail });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        user.profilePicture = profileImagePath;
-        await user.save();
-
-        res.status(200).json({ message: 'Profile picture updated successfully', imagePath: profileImagePath });
-    } catch (error) {
-        console.error('Error uploading profile photo:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
 
 // routes
 app.get('/', (req, res) => {
@@ -379,6 +143,69 @@ app.post('/logout', (req, res) => {
     res.status(200).send({ message: 'Logout successful' });
 });
 
+// Middleware to handle multipart/form-data and store files
+app.post('/create', upload.any(), async (req, res) => {
+    console.log("create called ");
+    console.log("problems : ", req.body.problems);
+
+    const { useremail, contestName, duration, startTime, endTime } = req.body;
+    console.log("files: ", req.files);
+
+    try {
+        // Parse problems data from req.body.problems
+        let problems = req.body.problems;
+        if (typeof problems === 'string') {
+            problems = JSON.parse(problems);
+        }
+
+        // Attach file paths if files are uploaded
+        problems = problems.map((problem, index) => {
+            const images = req.files
+                .filter(file => file.fieldname.startsWith(`images-${index}`))
+                .map(file => path.join('uploads/images', path.basename(file.path)));
+
+            return {
+                ...problem,
+                inputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][inputFile]`)?.path || '')),
+                outputFile: path.join('uploads', path.basename(req.files.find(file => file.fieldname === `problems[${index}][outputFile]`)?.path || '')),
+                images
+            };
+        });
+
+        // Attach contest image if uploaded
+        const contestImage = path.join('uploads/images', path.basename(req.files.find(file => file.fieldname === 'contestImage')?.path || ''));
+
+        // Find the user
+        let user = await User.findOne({ email: useremail });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Create new contest
+        const newContest = new Contest({
+            contestName,
+            duration,
+            startTime: new Date(startTime),
+            endTime: new Date(endTime),
+            problems,
+            photo: contestImage,
+            createdBy: user._id,
+        });
+
+        // Save the contest
+        const savedContest = await newContest.save();
+
+        // Add the contest reference to the user's contests
+        user.contests.push(savedContest._id);
+        await user.save();
+
+        res.status(201).json({ message: 'Contest created successfully!', contest: savedContest });
+    } catch (error) {
+        console.error('Error creating contest:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 
 
 //get contests
@@ -454,6 +281,13 @@ app.get('/problemsFromExpiredContests', async (req, res) => {
 });
 
 
+// Static files route for uploaded files
+// const uploadDir = path.join(`${__dirname}/src`, "uploads")
+// if (!fs.existsSync(uploadDir)) {
+//     fs.mkdirSync(codeDir, { recursive: true });
+// }
+
+
 app.post("/run", async (req, res) => {
     const { language = "cpp", code, pretestIp } = req.body;
     if (code === "") {
@@ -480,6 +314,124 @@ app.post("/run", async (req, res) => {
         res.status(500).json({ success: false, message: "Error executing code", error: err.message });
     }
 });
+
+app.post("/submit", async (req, res) => {
+    const { language = "cpp", code, ipath, opath, contestId, index, email } = req.body;
+    console.log(email, " ", contestId, " ", index);
+
+    if (code === "") {
+        return res.status(400).json({ success: false, message: "Do write some code to submit!" });
+    }
+
+    try {
+        const normalizeNewlines = (text) => {
+            return text.replace(/\r\n/g, "\n"); // Convert Windows-style newlines to Unix-style newlines
+        };
+        const filePath = await generateFile(language, code);
+
+        // Ensure the input file path is correct
+        const inputFileName = path.basename(ipath);
+        const inputFilePath = path.join(__dirname, "src", "uploads", inputFileName); // Correctly set input file path
+        console.log("filepath: ", filePath, "inputpath: ", inputFilePath);
+
+        // here check the filePath and inputFiilePath to replace \\ with /
+        // Replace backslashes with forward slashes in the file paths
+        const correctedFilePath = filePath.replace(/\\/g, '/');
+        const correctedInputFilePath = inputFilePath.replace(/\\/g, '/');
+
+        // Send the corrected file paths to executeCpp
+        let output;
+        if (language === "cpp") output = await executeCpp(correctedFilePath, correctedInputFilePath);
+        else if (language === "java") output = await executeJava(correctedFilePath, correctedInputFilePath);
+        else if (language === "python") output = await executePython(correctedFilePath, correctedInputFilePath);
+        else res.status(500).json({ success: false, message: "Unexpected language selected" });
+
+        // Ensure the output file path is correct
+        const outputFileName = path.basename(opath);
+        const outputFilePath = path.join(__dirname, "src", "uploads", outputFileName);
+        const correctedOutputFilePath = outputFilePath.replace(/\\/g, '/');
+
+        const expectedOutput = fs.readFileSync(correctedOutputFilePath, 'utf-8').trim();
+        const corrExpectedOutput = normalizeNewlines(expectedOutput);
+        let submissionResult;
+        let message;
+
+        if (output.trim() === corrExpectedOutput) {
+            submissionResult = "ACC";
+            message = "Accepted";
+        } else {
+            submissionResult = "WA";
+            message = "Wrong Answer";
+        }
+
+        // Find the user by email and add the submission to their submissions array
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        user.submissions.push({
+            contestId,
+            submissionType: language,
+            problemIndex: index,
+            code,
+            result: submissionResult,
+            message,
+            receivedOutput: output.trim(),
+            expectedOutput
+        });
+        await user.save();
+
+        if (submissionResult === "ACC") {
+            const contest = await Contest.findById(contestId);
+            if (!contest) {
+                return res.status(404).json({ success: false, message: "Contest not found" });
+            }
+
+            if (contest.registrations.includes(email)) {
+                let rankedUser = contest.rankings.find(user => user.userEmail === email);
+
+                if (!rankedUser) {
+                    rankedUser = {
+                        solved: [],
+                        userEmail: email,
+                        score: 0,
+                        submissions: 0,
+                        lastSubmissionTime: null
+                    };
+                    rankedUser.solved.push(index);
+                    rankedUser.score += (index + 1) * 50;
+                    rankedUser.lastSubmissionTime = new Date();
+                    rankedUser.submissions += 1;
+                    contest.rankings.push(rankedUser);
+                }
+
+                if (!rankedUser.solved.includes(index)) {
+                    rankedUser.solved.push(index);
+                    rankedUser.score += (index + 1) * 50;
+                    rankedUser.lastSubmissionTime = new Date();
+                    rankedUser.submissions += 1;
+                }
+
+                console.log(rankedUser);
+                await contest.save();
+            }
+        }
+
+        res.send({
+            success: submissionResult === "ACC",
+            message,
+            receivedOutput: output.trim(),
+            expectedOutput
+        });
+
+    } catch (err) {
+        console.error("Error executing code:", err);
+        res.status(500).json({ success: false, message: "Error executing code", error: err.message });
+    }
+});
+
+
 
 
 app.get('/submissions/:contestId/:index', async (req, res) => {
@@ -560,6 +512,37 @@ app.put('/contests/:contestId', async (req, res) => {
     }
 });
 
+
+
+
+// Route to handle profile picture upload
+app.post('/uploadProfilePic', upload.single('profilePhoto'), async (req, res) => {
+    try {
+        console.log("called");
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        // Update the user's profile picture in the database
+        const userEmail = req.body.userEmail; // Assuming user email is sent from frontend
+        const profileImagePath = path.join('uploads/images', req.file.filename);
+
+        let user = await User.findOne({ email: userEmail });
+        if (!user) {
+            console.log("user not found");
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update user's profile picture field
+        user.profilePicture = profileImagePath;
+        await user.save();
+
+        res.status(200).json({ message: 'Profile picture updated successfully', imagePath: profileImagePath });
+    } catch (error) {
+        console.error('Error uploading profile photo:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 // Route to check user email in contest registrations and register if not present
 app.post('/checksubmission', async (req, res) => {

@@ -2,9 +2,9 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const executeCppForRun = (filePath, pretestInput) => {
-    const exePath = filePath.replace(".cpp", ".exe");
-    const tempInputFilePath = `${filePath}_input.txt`;
+const executeJavaForRun = (filePath, pretestInput) => {
+    const dir = path.dirname(filePath);
+    const tempInputFilePath = path.join(dir, `Main_input.txt`);
 
     return new Promise((resolve, reject) => {
         fs.writeFile(tempInputFilePath, pretestInput, (writeError) => {
@@ -12,20 +12,20 @@ const executeCppForRun = (filePath, pretestInput) => {
                 return reject(writeError);
             }
 
-            const compileCommand = `g++ "${filePath}" -o "${exePath}"`;
+            const compileCommand = `javac "${filePath}"`;
             exec(compileCommand, (compileError, stdout, stderr) => {
                 if (compileError) {
-                    cleanupFiles([filePath, exePath, tempInputFilePath]);
+                    cleanupFiles([filePath, tempInputFilePath]);
                     return reject(compileError);
                 }
                 if (stderr) {
-                    cleanupFiles([filePath, exePath, tempInputFilePath]);
+                    cleanupFiles([filePath, tempInputFilePath]);
                     return reject(stderr);
                 }
 
-                const command = `"${exePath}" < "${tempInputFilePath}"`;
+                const command = `java -cp "${dir}" Main < "${tempInputFilePath}"`;
                 exec(command, (runError, runStdout, runStderr) => {
-                    cleanupFiles([filePath, exePath, tempInputFilePath]);
+                    cleanupFiles([filePath, tempInputFilePath]);
 
                     if (runError) {
                         return reject(runError);
@@ -48,4 +48,4 @@ const cleanupFiles = (files) => {
     });
 };
 
-module.exports = executeCppForRun;
+module.exports = executeJavaForRun;
