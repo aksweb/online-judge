@@ -1,17 +1,48 @@
 const mongoose = require('mongoose');
-const { DBConnection } = require('./database/db')
-const Contest = require("./models/Contest")
-async function migrateUsers() {
+const { DBConnection } = require('./database/db');
+const Contest = require("./models/Contest");
+
+async function migrateContests() {
     try {
         // Connect to MongoDB
+        await DBConnection();
 
-        DBConnection();
+        // Fetch all contests
+        const contests = await Contest.find();
 
-        const result = await Contest.updateMany(
-            { photo: { $exists: false } }, // Find contests where the photo field does not exist
-            { $set: { photo: '' } } // Set the default value for the photo field
-        );
-        console.log(`${result.nModified} contests updated with the new photo field`);
+        for (const contest of contests) {
+            // Check if rankings need to be updated with the new structure
+            let updated = false;
+
+            contest.rankings = contest.rankings.map(ranking => {
+                if (typeof ranking === 'string') {
+                    // Convert old string format to new object format
+                    updated = true;
+                    return {
+                        userEmail: ranking,
+                        score: 0,
+                        submissions: 0,
+                        lastSubmissionTime: null,
+                        solved: []
+                    };
+                } else if (!ranking.solved) {
+                    // Add the solved field if it doesn't exist
+                    updated = true;
+                    return {
+                        ...ranking,
+                        solved: []
+                    };
+                }
+                return ranking;
+            });
+
+            // Save the updated contest if any changes were made
+            if (updated) {
+                await contest.save();
+            }
+        }
+
+        console.log('Contests updated with the new rankings structure');
     } catch (error) {
         console.error('Error updating contests:', error);
     } finally {
@@ -19,4 +50,4 @@ async function migrateUsers() {
     }
 }
 
-migrateUsers();
+migrateContests();
