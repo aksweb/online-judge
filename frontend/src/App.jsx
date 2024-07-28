@@ -18,7 +18,7 @@ const App = () => {
   return (
     <AuthProvider>
       <Router>
-        <div className="bg-gradient-to-b from-rose-50 to-rose-100 text-slate-50 min-h-screen ">
+        <div className="min-h-screen ">
           <Nav />
           <Routes>
             <Route path="/" element={<Home />} />

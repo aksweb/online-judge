@@ -3,6 +3,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import HtmlPage from "./HtmlPage";
 import "./Home.css";
+import BgAnimation from "./BackgroundAnimation";
 const Home = () => {
   const [contests, setContests] = useState([]);
   const [showPreloader, setShowPreloader] = useState(true);
@@ -65,19 +66,19 @@ const Home = () => {
               To host a contest, register as a contest creator by turning ON the
               checkbox.
             </marquee>
-
+            <BgAnimation />
             <div className="flex flex-wrap lg:flex-nowrap text-black relative">
               <div className="w-full  lg:w-2/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar">
-                <div className="bg-white bg-opacity-25 shadow-md rounded-lg overflow-hidden">
+                <div className=" bg-opacity-25 shadow-md rounded-lg overflow-hidden">
                   <div className="bg-gradient-to-r from-red-950 via-red-500 to-red-950 p-4">
                     <h3 className="text-lg font-semibold text-white">
                       Contest History
                     </h3>
                   </div>
-                  <div className="p-4 rounded-3xl p-px bg-gradient-to-b from-red-950 to-transparent">
-                    <div class="bg-gray-50 p-10 child-container `rounded-[calc(1.5rem-1px)]`">
+                  <div className="p-4 rounded-3xl p-px bg-gradient-to-b from-transparent to-blue-950">
+                    <div class=" p-10 child-container `rounded-[calc(1.5rem-1px)]`">
                       <div id="current-upcoming-contests">
-                        <h4 className="text-md font-semibold mb-2">
+                        <h4 className="text-md font-semibold mb-2 text-sky-500">
                           <span class="relative flex h-3 w-3">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
@@ -104,7 +105,7 @@ const Home = () => {
                       </div>
                       <hr className="my-4" />
                       <div id="past-contests">
-                        <h4 className="text-md font-semibold mb-2">
+                        <h4 className="text-md font-semibold mb-2 text-white">
                           Past Contests
                         </h4>
                         <ul className="list-disc pl-4">
@@ -144,8 +145,8 @@ const Home = () => {
               </div>
 
               {/* Recently Posted Contests */}
-              <div className="w-full lg:w-3/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar text-black relative">
-                <div className="bg-white bg-opacity-25 shadow-md rounded-lg overflow-hidden">
+              <div className="w-full lg:w-3/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar text-sky-600 relative">
+                <div className=" bg-gradient-to-b from-transparent to-blue-950 bg-opacity-25 shadow-md rounded-lg overflow-hidden">
                   <div className="bg-gradient-to-r from-red-950 via-red-500 to-red-600 p-4">
                     <h3 className="text-lg font-semibold text-white">
                       Recently Posted Contests
@@ -156,9 +157,9 @@ const Home = () => {
                     {contests.map((contest) => (
                       <div
                         key={contest._id}
-                        className="mb-4 rounded-md shadow-none transition-shadow duration-300 cursor-pointer hover:shadow-lg hover:shadow-gray-400 bg-gray-50 p-4 rounded-md shadow-sm transition duration-300 hover:shadow-lg floating"
+                        className="mb-4 rounded-md shadow-none transition-shadow duration-300 cursor-pointer hover:shadow-lg hover:shadow-red-400 bg-transparent p-4 rounded-md shadow-sm transition duration-300 hover:shadow-lg floating"
                       >
-                        <h4 className="text-md font-semibold mb-2 text-gray-800">
+                        <h4 className="text-md font-semibold mb-2 text-white ">
                           {contest.contestName}
                         </h4>
                         <img
@@ -212,6 +213,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
+            {/* </BgAnimation> */}
           </>
         )}
       </div>

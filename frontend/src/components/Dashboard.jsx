@@ -3,7 +3,7 @@ import axios from "axios";
 import { AuthContext } from "./auth/AuthContext";
 import CodeModal from "./CodeModal";
 // import "./Dashboard.css"; // Import CSS for animations (if needed)
-
+import BackgroundAnimation from "./BackgroundAnimation";
 const Dashboard = () => {
   const { auth } = useContext(AuthContext);
   const [user, setUser] = useState(null);
@@ -102,6 +102,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex flex-wrap">
+      <BackgroundAnimation />
       {/* User Data and Profile Photo */}
       <div className="w-full lg:w-1/3 px-10 py-4">
         {" "}
@@ -177,7 +178,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
       {/* Submissions Table and Code Modal */}
       <div className="w-full lg:w-2/3 px-4 py-4">
         {" "}
@@ -222,7 +222,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
       {modalOpen && (
         <CodeModal code={selectedSubmission} closeModal={closeModal} />
       )}

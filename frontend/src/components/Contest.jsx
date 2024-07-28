@@ -3,6 +3,8 @@ import { AuthContext } from "./auth/AuthContext";
 import { Link } from "react-router-dom";
 import "./ContestList.css";
 import "./ProblemList.css";
+import BackgroundAnimation from "./BackgroundAnimation";
+
 const ContestsList = () => {
   const [contests, setContests] = useState([]);
   const [error, setError] = useState(null);
@@ -81,10 +83,12 @@ const ContestsList = () => {
 
   return (
     <>
+      <BackgroundAnimation />
+
       <h1 className="nabla-unique styl">Contests</h1>
-      <div className="container mx-auto p-4 chinese-theme">
+      <div className="container mx-auto p-4 ">
         <div>
-          <h2 className="text-xl font-semibold mb-2 text-black">
+          <h2 className="text-xl font-semibold mb-2 text-sky-400">
             Upcoming Contests
           </h2>
           {upcomingOrCurrentContests.length === 0 ? (
@@ -117,28 +121,24 @@ const ContestsList = () => {
                 <tbody className="bg-white divide-y divide-gray-200 text-blue-900">
                   {upcomingOrCurrentContests.map((contest) => (
                     <tr key={contest._id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {contest.contestName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {contest.duration}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">{contest.contestName}</td>
+                      <td className="px-6 py-4">{contest.duration}</td>
+                      <td className="px-6 py-4">
                         {new Date(contest.startTime).toLocaleString("en-US", {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         {new Date(contest.endTime).toLocaleString("en-US", {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         {contest.createdBy.username}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         {auth &&
                         auth.userEmail &&
                         contest.registrations.includes(auth.userEmail) ? (
@@ -161,7 +161,7 @@ const ContestsList = () => {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-2 text-black">
+          <h2 className="text-xl font-semibold mb-2 text-white">
             Active / Past Contests
           </h2>
           {pastContests.length === 0 ? (
@@ -169,59 +169,55 @@ const ContestsList = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 table-auto">
-                <thead className="bg-gray-50">
-                  <tr className="text-left">
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <thead className="bg-red-950">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Duration
                     </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Start Time
                     </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       End Time
                     </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Created By
-                    </th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200 text-black">
+                <tbody className="bg-gradient-to-b from-transparent to-blue-950 divide-y divide-gray-200 text-white">
                   {pastContests.map((contest) => (
-                    <tr key={contest._id} className="text-left">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {contest.contestName}
+                    <tr key={contest._id}>
+                      <td className="px-6 py-4">{contest.contestName}</td>
+                      <td className="px-6 py-4">
+                        <Link
+                          to={`/view/${contest._id}`}
+                          className="underline hover:bg-blue-700 transition duration-300"
+                        >
+                          View Contest
+                        </Link>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {contest.duration}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">{contest.duration}</td>
+                      <td className="px-6 py-4">
                         {new Date(contest.startTime).toLocaleString("en-US", {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         {new Date(contest.endTime).toLocaleString("en-US", {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4">
                         {contest.createdBy.username}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
-                          to={`/view/${contest._id}`}
-                          className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
-                        >
-                          View Contest
-                        </Link>
                       </td>
                     </tr>
                   ))}
