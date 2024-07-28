@@ -44,7 +44,7 @@ const ViewContest = () => {
           onClick={() => handleTabClick("details")}
           className={`mr-4 ${
             activeTab === "details" ? "font-bold" : ""
-          } btn shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-white ease-out hover:translate-y-1 transition-all rounded`}
+          } btn shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-cyan-400 ease-out hover:translate-y-1 transition-all rounded`}
         >
           Problems
         </button>
@@ -52,15 +52,15 @@ const ViewContest = () => {
           onClick={() => handleTabClick("leaderboard")}
           className={`${
             activeTab === "leaderboard" ? "font-bold" : ""
-          } btn shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-white ease-out hover:translate-y-1 transition-all rounded`}
+          } btn shadow-[0_9px_0_rgb(0,0,0)] hover:shadow-[0_4px_0px_rgb(0,0,0)] text-black bg-orange-500 ease-out hover:translate-y-1 transition-all rounded`}
         >
           Leaderboard
         </button>
       </nav>
 
       {activeTab === "details" && (
-        <div>
-          <h1 className="text-3xl font-bold mb-4">{contest.contestName}</h1>
+        <div className="text-white">
+          <h2 className="text-3xl font-bold mb-4 ">{contest.contestName}</h2>
           <p>
             <strong>Duration:</strong> {contest.duration}
           </p>
@@ -83,16 +83,16 @@ const ViewContest = () => {
           </p>
 
           <div className="mt-4 pl-10 pr-10">
-            <h2 className="text-xl font-semibold mb-2">Problems</h2>
+            <h2 className="text-xl font-semibold mb-2 text-white">Problems</h2>
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-red-950">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-gray-100 divide-y divide-gray-200 text-black">
+              <tbody className="bg-gradient-to-b from-transparent to-blue-950 divide-y divide-gray-200 text-teal-50">
                 {contest.problems.map((problem, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap hover:underline hover:text-blue-500">
@@ -139,21 +139,21 @@ const Leaderboard = ({ contest }) => {
     <div>
       <h2 className="text-3xl font-bold mb-4 styl">Leaderboard</h2>
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+        <thead className="bg-orange-500 text-black">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               Rank
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               User Email
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               Score
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               Submissions
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
               Last Submission Time
             </th>
           </tr>
