@@ -96,7 +96,7 @@ const ContestsList = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 table-auto">
-                <thead className="bg-gray-50">
+                <thead className="bg-red-950">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
@@ -118,7 +118,7 @@ const ContestsList = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200 text-blue-900">
+                <tbody className="bg-gradient-to-b from-transparent to-blue-950 divide-y divide-gray-200 text-teal-50">
                   {upcomingOrCurrentContests.map((contest) => (
                     <tr key={contest._id}>
                       <td className="px-6 py-4">{contest.contestName}</td>
