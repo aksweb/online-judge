@@ -67,7 +67,7 @@ const Home = () => {
               checkbox.
             </marquee>
             <BgAnimation />
-            <div className=" px-32 flex flex-wrap lg:flex-nowrap text-black relative">
+            <div className="flex flex-wrap lg:flex-nowrap text-black relative">
               <div className="w-full  lg:w-2/5 px-2 py-4 lg:px-4 h-auto overflow-y-auto no-scrollbar">
                 <div className=" bg-opacity-25 shadow-md rounded-lg overflow-hidden">
                   <div className="bg-gradient-to-r from-red-950 via-red-500 to-red-950 p-4">
@@ -145,7 +145,7 @@ const Home = () => {
               </div>
 
               {/* Recently Posted Contests */}
-              <div className="w-full lg:w-3/4 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar text-sky-600 relative">
+              <div className="w-full lg:w-3/5 px-2 py-4 lg:px-4 h-screen overflow-y-auto no-scrollbar text-sky-600 relative">
                 <div className=" bg-gradient-to-b from-transparent to-blue-950 bg-opacity-25 shadow-md rounded-lg overflow-hidden">
                   <div className="bg-gradient-to-r from-red-950 via-red-500 to-red-600 p-4">
                     <h3 className="text-lg font-semibold text-white">
