@@ -48,7 +48,7 @@ const s3 = new AWS.S3({
 const upload = multer({
     storage: multerS3({
         s3: s3,
-        bucket: process.env.AWS_BUCKET_NAME,
+        bucket: () => `${process.env.AWS_BUCKET_NAME}`,
         acl: 'public-read',
         key: function (req, file, cb) {
             let folder = 'uploads/';
@@ -113,6 +113,10 @@ app.post("/submit", async (req, res) => {
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: inputFilePath
         };
+        // const inputParams = {
+        //     Bucket: () => `${process.env.AWS_BUCKET_NAME}`,
+        //     Key: inputFilePath
+        // };
         const inputText = await s3.getObject(inputParams).promise()
             .then(data => data.Body.toString('utf-8'));
 
